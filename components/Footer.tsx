@@ -1,6 +1,6 @@
 'use client'
 import Image from "next/image";
-import NavbarLink from "./NavbarLink";
+import FooterLink from "@/components/FooterLink";
 
 const footerLinks = [
   { href: "/", label: "Home" },
@@ -47,7 +47,7 @@ const Footer = () => {
             <ul className="space-y-3">
               {footerLinks.map((link) => (
                 <li key={link.href + link.label}>
-                  <NavbarLink
+                  <FooterLink
                     href={link.href}
                     label={link.label}
                     className="text-gray-400 hover:text-primary-400 text-sm"
@@ -63,7 +63,7 @@ const Footer = () => {
             <ul className="space-y-3">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <NavbarLink
+                  <FooterLink
                     href={link.href}
                     label={link.label}
                     className="text-gray-400 hover:text-primary-400 text-sm"

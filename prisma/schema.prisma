@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?      @map("email_verified")
+  image         String?
+  role          String         @default("user")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  reservations  Reservations[]
+  payment       Payment?
+  accounts      Account[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Rooms {
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  image         String
+  price         Int
+  capacity      Int
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  roomAmenities RoomAmenities[]
+  reservations  Reservations[]
+}
+
+model Amenities {
+  id            String          @id @default(cuid())
+  name          String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  roomAmenities RoomAmenities[]
+}
+
+model RoomAmenities {
+  id        String    @id @default(cuid())
+  roomId    String
+  room      Rooms     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenityId String
+  amenities Amenities @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Reservations {
+  id        String   @id @default(cuid())
+  startAt   DateTime
+  endAt     DateTime
+  price     Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId    String
+  rooms     Rooms    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  method    String?
+  amount    Int
+  status    String   @default("unpaid")
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

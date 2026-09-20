@@ -3,20 +3,12 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { HiMenuAlt3, HiX } from "react-icons/hi";
-import NavbarLink from "./NavbarLink";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/rooms", label: "Rooms" },
-  { href: "/contact", label: "Contact" },
-  { href: "/reservation", label: "My Reservation" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/manage-room", label: "Manage Room" },
-];
+import { NavbarLinkMobile, NavbarLinkDesktop } from "./NavbarLink";
+import { useSession, signOut } from "next-auth/react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
@@ -35,34 +27,45 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <NavbarLink
-                key={link.href}
-                href={link.href}
-                label={link.label}
-                className="text-gray-700 hover:text-primary-500"
-              />
-            ))}
+            <NavbarLinkDesktop isLogin={!!session?.user} isAdmin={session?.user.role === 'admin'} />
           </div>
 
           {/* Login Button (Desktop) */}
           <div className="hidden lg:flex items-center">
-            <Link
-              href="/login"
-              className="px-5 py-2.5 rounded-lg font-semibold text-sm bg-primary-500 text-white hover:bg-primary-600 shadow-sm shadow-primary-500/20 transition-colors duration-200"
-            >
-              Login
-            </Link>
+            {session?.user ? (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="px-5 py-2.5 rounded-lg font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors duration-200 cursor-pointer"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="px-5 py-2.5 rounded-lg font-semibold text-sm bg-primary-500 text-white hover:bg-primary-600 shadow-sm shadow-primary-500/20 transition-colors duration-200"
+              >
+                Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile: Login + Hamburger */}
           <div className="flex lg:hidden items-center gap-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded-lg font-semibold text-sm bg-primary-500 text-white hover:bg-primary-600 shadow-sm shadow-primary-500/20 transition-colors duration-200"
-            >
-              Login
-            </Link>
+            {session?.user ? (
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="px-4 py-2 rounded-lg font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors duration-200 cursor-pointer"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-2 rounded-lg font-semibold text-sm bg-primary-500 text-white hover:bg-primary-600 shadow-sm shadow-primary-500/20 transition-colors duration-200"
+              >
+                Login
+              </Link>
+            )}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200"
@@ -80,14 +83,7 @@ const Navbar = () => {
           }`}
       >
         <div className="bg-white border-t border-gray-100 px-4 py-4 shadow-lg">
-          {navLinks.map((link) => (
-            <NavbarLink
-              key={link.href}
-              href={link.href}
-              label={link.label}
-              className="block py-3 text-gray-700 hover:text-primary-500 border-b border-gray-50 last:border-0"
-            />
-          ))}
+          <NavbarLinkMobile isLogin={!!session?.user} isAdmin={session?.user.role === 'admin'} onLinkClick={() => setIsOpen(false)} />
         </div>
       </div>
     </nav>
