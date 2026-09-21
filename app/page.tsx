@@ -56,39 +56,40 @@ const services = [
 
 const rooms = [
   {
+    id: "1",
     name: "Standard Room",
     price: 800000,
     adults: 2,
   },
   {
+    id: "2",
     name: "Deluxe Room",
     price: 1500000,
     adults: 2,
   },
   {
+    id: "3",
     name: "Suite Room",
     price: 3000000,
     adults: 4,
   },
   {
+    id: "4",
+    name: "Standard Room",
+    price: 800000,
+    adults: 2,
+  },
+  {
+    id: "5",
+    name: "Deluxe Room",
+    price: 1500000,
+    adults: 2,
+  },
+  {
+    id: "6",
     name: "Suite Room",
     price: 3000000,
     adults: 4,
-  },
-  {
-    name: "Suite Room",
-    price: 3000000,
-    adults: 4,
-  },
-  {
-    name: "Suite Room",
-    price: 3000000,
-    adults: 4,
-  },
-  {
-    name: "Suite Room",
-    price: 3000000,
-    adults: 1,
   },
 ];
 
@@ -183,9 +184,10 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {rooms.map((room, index) => (
+            {rooms.map((room) => (
               <Card
-                key={index}
+                key={room.id}
+                id={room.id}
                 name={room.name}
                 price={room.price}
                 adults={room.adults}
