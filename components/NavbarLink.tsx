@@ -13,8 +13,8 @@ const authenticatedLinks = [
 ]
 
 const adminLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/manage-room", label: "Manage Room" },
+  { href: "/admin/dashboard", label: "Dashboard" },
+  { href: "/admin/manage-room", label: "Manage Room" },
 ]
 
 interface NavbarLinkProps {
