@@ -8,4 +8,3 @@ const adapter = new PrismaPg({ connectionString: process.env.POSTGRES_URL });
 export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter })
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
-

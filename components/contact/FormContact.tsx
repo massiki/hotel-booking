@@ -1,5 +1,4 @@
 'use client'
-import { useState } from 'react'
 import {
   MdLocationOn,
   MdPhone,
@@ -7,6 +6,9 @@ import {
   MdAccessTime,
   MdSend,
 } from 'react-icons/md'
+import { contactAction } from '@/lib/action'
+import { useActionState, useState } from 'react'
+import clsx from 'clsx'
 
 const contactInfo = [
   {
@@ -32,22 +34,7 @@ const contactInfo = [
 ]
 
 const FormContact = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  })
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-  }
+  const [state, formAction, isPanding] = useActionState(contactAction, null)
 
   return (
     <section className="py-20 bg-gray-50">
@@ -62,8 +49,12 @@ const FormContact = () => {
               <p className="text-gray-500 text-sm mb-8">
                 Isi form di bawah ini dan kami akan membalas sesegera mungkin.
               </p>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {state?.success && (
+                <p className="p-5 mb-4 bg-green-100 rounded text-sm text-green-700">
+                  {state?.success}
+                </p>
+              )}
+              <form action={formAction} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
@@ -76,12 +67,14 @@ const FormContact = () => {
                       type="text"
                       id="name"
                       name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
                       placeholder="Masukkan nama Anda"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                     />
+                    {state?.error?.name && (
+                      <span className="mt-1 text-sm text-red-500">
+                        {state?.error?.name[0]}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <label
@@ -94,12 +87,14 @@ const FormContact = () => {
                       type="email"
                       id="email"
                       name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
                       placeholder="Masukkan email Anda"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                     />
+                    {state?.error?.email && (
+                      <span className="mt-1 text-sm text-red-500">
+                        {state?.error?.email[0]}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -114,12 +109,14 @@ const FormContact = () => {
                     type="text"
                     id="subject"
                     name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
                     placeholder="Perihal pesan Anda"
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                   />
+                  {state?.error?.subject && (
+                    <span className="mt-1 text-sm text-red-500">
+                      {state.error.subject[0]}
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -132,21 +129,24 @@ const FormContact = () => {
                   <textarea
                     id="message"
                     name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
                     rows={5}
                     placeholder="Tuliskan pesan Anda di sini..."
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm resize-none"
                   />
+                  {state?.error?.message && (
+                    <span className="mt-1 text-sm text-red-500">
+                      {state.error.message[0]}
+                    </span>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
+                  className={clsx("inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer", { "cursor-progress opacity-50": isPanding })}
+                  disabled={isPanding}
                 >
                   <MdSend className="text-lg" />
-                  Kirim Pesan
+                  {isPanding ? "Mengirim..." : "Kirim Pesan"}
                 </button>
               </form>
             </div>
