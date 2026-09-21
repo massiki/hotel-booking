@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider session={session}>
+        <SessionProvider session={session} refetchOnWindowFocus={false}>
           <Navbar />
           {children}
           <Footer />
