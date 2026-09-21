@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({
   image = "/header.jpg",
 }) => {
   return (
-    <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+    <div className="relative h-[70vh] min-h-125 flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/50 to-black/70" />
       </div>
 
       {/* Content */}
@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-white to-transparent" />
     </div>
   );
 };
