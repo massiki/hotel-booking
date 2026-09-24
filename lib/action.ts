@@ -1,5 +1,5 @@
 "use server"
-import { contactSchema, roomSchema } from "@/lib/zod"
+import { contactSchema, roomSchema, amenitySchema } from "@/lib/zod"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { del } from "@vercel/blob"
@@ -275,4 +275,147 @@ const deleteContactAction = async (contactId: string) => {
   return { success: "Pesan berhasil dihapus" }
 }
 
-export { contactAction, createRoomAction, updateRoomAction, deleteRoomAction, deleteContactAction }
+const createAmenityAction = async (prevState: unknown, formData: FormData) => {
+  const values = {
+    name: String(formData.get("name") ?? ""),
+  }
+
+  if (!(await requireAdmin())) {
+    return {
+      error: { form: ["Tidak diizinkan"] } as Record<string, string[]>,
+      values,
+    }
+  }
+
+  const validated = amenitySchema.safeParse({ name: formData.get("name") })
+  if (!validated.success) {
+    return {
+      error: validated.error.flatten().fieldErrors as Record<string, string[]>,
+      values,
+    }
+  }
+
+  try {
+    const duplicate = await prisma.amenities.findFirst({
+      where: { name: { equals: validated.data.name, mode: "insensitive" } },
+      select: { id: true },
+    })
+    if (duplicate) {
+      return {
+        error: { name: ["Nama fasilitas sudah ada"] } as Record<string, string[]>,
+        values,
+      }
+    }
+
+    await prisma.amenities.create({ data: { name: validated.data.name } })
+  } catch (error) {
+    console.error(error)
+    return {
+      error: { form: ["Gagal menyimpan fasilitas. Coba lagi."] } as Record<string, string[]>,
+      values,
+    }
+  }
+
+  redirect('/admin/manage-amenities?success=created')
+}
+
+const updateAmenityAction = async (amenityId: string, prevState: unknown, formData: FormData) => {
+  const values = {
+    name: String(formData.get("name") ?? ""),
+  }
+
+  if (!(await requireAdmin())) {
+    return {
+      error: { form: ["Tidak diizinkan"] } as Record<string, string[]>,
+      values,
+    }
+  }
+
+  const validated = amenitySchema.safeParse({ name: formData.get("name") })
+  if (!validated.success) {
+    return {
+      error: validated.error.flatten().fieldErrors as Record<string, string[]>,
+      values,
+    }
+  }
+
+  try {
+    const existing = await prisma.amenities.findUnique({
+      where: { id: amenityId },
+      select: { id: true },
+    })
+    if (!existing) {
+      return {
+        error: { form: ["Fasilitas tidak ditemukan"] } as Record<string, string[]>,
+        values,
+      }
+    }
+
+    const duplicate = await prisma.amenities.findFirst({
+      where: {
+        name: { equals: validated.data.name, mode: "insensitive" },
+        id: { not: amenityId },
+      },
+      select: { id: true },
+    })
+    if (duplicate) {
+      return {
+        error: { name: ["Nama fasilitas sudah ada"] } as Record<string, string[]>,
+        values,
+      }
+    }
+
+    await prisma.amenities.update({
+      where: { id: amenityId },
+      data: { name: validated.data.name },
+    })
+  } catch (error) {
+    console.error(error)
+    return {
+      error: { form: ["Gagal menyimpan fasilitas. Coba lagi."] } as Record<string, string[]>,
+      values,
+    }
+  }
+
+  revalidatePath('/admin/manage-amenities')
+  redirect('/admin/manage-amenities?success=updated')
+}
+
+const deleteAmenityAction = async (amenityId: string) => {
+  if (!(await requireAdmin())) {
+    return { error: "Tidak diizinkan" }
+  }
+
+  try {
+    const amenity = await prisma.amenities.findUnique({
+      where: { id: amenityId },
+      include: { _count: { select: { roomAmenities: true } } },
+    })
+    if (!amenity) return { error: "Fasilitas tidak ditemukan" }
+
+    if (amenity._count.roomAmenities > 0) {
+      return {
+        error: `Fasilitas masih digunakan ${amenity._count.roomAmenities} kamar dan tidak bisa dihapus`,
+      }
+    }
+
+    await prisma.amenities.delete({ where: { id: amenityId } })
+  } catch (error) {
+    console.error(error)
+    return { error: "Gagal menghapus fasilitas. Coba lagi." }
+  }
+
+  revalidatePath('/admin/manage-amenities')
+  return { success: "Fasilitas berhasil dihapus" }
+}
+
+export {
+  contactAction,
+  createRoomAction,
+  updateRoomAction,
+  deleteRoomAction,
+  deleteContactAction,
+  createAmenityAction,
+  updateAmenityAction,
+  deleteAmenityAction,
+}

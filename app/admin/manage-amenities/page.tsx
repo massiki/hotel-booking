@@ -1,3 +1,5 @@
+import TableAmenities from '@/components/admin/amenity/TableAmenities'
+import { getAmenitiesAdmin } from '@/lib/data'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -5,7 +7,24 @@ export const metadata: Metadata = {
   description: 'Kelola data fasilitas kamar.',
 }
 
-const ManageAmenitiesPage = () => {
+type ManageAmenitiesPageProps = {
+  searchParams: Promise<{ search?: string; page?: string; success?: string }>
+}
+
+const successMessages: Record<string, string> = {
+  created: 'Fasilitas berhasil ditambahkan.',
+  updated: 'Fasilitas berhasil diperbarui.',
+}
+
+const ManageAmenitiesPage = async ({ searchParams }: ManageAmenitiesPageProps) => {
+  const params = await searchParams
+  const search = typeof params.search === 'string' ? params.search : ''
+  const parsedPage = Number(params.page)
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1
+  const successMessage = typeof params.success === 'string' ? successMessages[params.success] : undefined
+
+  const { amenities, total, page: currentPage, totalPages } = await getAmenitiesAdmin({ search, page })
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -17,12 +36,21 @@ const ManageAmenitiesPage = () => {
           </p>
         </div>
 
-        {/* Placeholder */}
-        <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
-          <p className="text-gray-500">
-            Halaman ini sedang disiapkan.
-          </p>
-        </div>
+        {/* Success banner */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Amenities Table */}
+        <TableAmenities
+          amenities={amenities}
+          total={total}
+          page={currentPage}
+          totalPages={totalPages}
+          search={search}
+        />
       </div>
     </div>
   )

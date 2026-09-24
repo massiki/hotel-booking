@@ -29,4 +29,10 @@ const roomSchema = object({
     .transform((items) => [...new Set(items)]),
 })
 
-export { contactSchema, roomSchema }
+const amenitySchema = object({
+  name: string()
+    .min(2, "Nama fasilitas minimal 2 karakter")
+    .max(100, "Nama fasilitas maksimal 100 karakter"),
+})
+
+export { contactSchema, roomSchema, amenitySchema }
