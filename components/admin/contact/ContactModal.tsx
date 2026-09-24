@@ -34,7 +34,7 @@ const ContactModal = ({ contact, onClose }: ContactModalProps) => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40"
+      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -48,11 +48,11 @@ const ContactModal = ({ contact, onClose }: ContactModalProps) => {
           <div className="min-w-0">
             <h2
               id="contact-modal-title"
-              className="text-lg font-bold text-gray-900 break-words"
+              className="text-lg font-bold text-gray-900 wrap-break-word"
             >
               {contact.subject}
             </h2>
-            <p className="mt-1 text-sm text-gray-500 break-words">
+            <p className="mt-1 text-sm text-gray-500 wrap-break-word">
               {contact.name} &middot; {contact.email}
             </p>
           </div>
@@ -73,7 +73,7 @@ const ContactModal = ({ contact, onClose }: ContactModalProps) => {
           <p className="text-xs font-medium text-gray-400 mb-2">
             {formatDateTime(contact.createdAt)}
           </p>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+          <p className="text-sm text-gray-700 whitespace-pre-wrap wrap-break-word leading-relaxed">
             {contact.message}
           </p>
         </div>

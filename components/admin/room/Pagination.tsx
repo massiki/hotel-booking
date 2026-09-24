@@ -29,12 +29,10 @@ const Pagination = ({ page, totalPages, search, basePath = '/admin/manage-room' 
       {isFirst ? (
         <span className={`${buttonClass} opacity-40 cursor-not-allowed hover:border-gray-200`}>
           <MdChevronLeft className="text-lg" />
-          Sebelumnya
         </span>
       ) : (
         <Link href={buildHref(page - 1, search, basePath)} className={buttonClass}>
           <MdChevronLeft className="text-lg" />
-          Sebelumnya
         </Link>
       )}
 
@@ -44,12 +42,10 @@ const Pagination = ({ page, totalPages, search, basePath = '/admin/manage-room' 
 
       {isLast ? (
         <span className={`${buttonClass} opacity-40 cursor-not-allowed hover:border-gray-200`}>
-          Berikutnya
           <MdChevronRight className="text-lg" />
         </span>
       ) : (
         <Link href={buildHref(page + 1, search, basePath)} className={buttonClass}>
-          Berikutnya
           <MdChevronRight className="text-lg" />
         </Link>
       )}
