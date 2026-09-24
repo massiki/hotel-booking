@@ -1,3 +1,5 @@
+import { Prisma } from "@/app/generated/prisma/client"
+
 interface RoomProps {
   id: string,
   name: string,
@@ -12,4 +14,18 @@ interface RoomProps {
   }[]
 }
 
-export type { RoomProps }
+type RoomByIdUser = Prisma.RoomsGetPayload<{
+  include: {
+    roomAmenities: {
+      include: {
+        amenities: {
+          select: {
+            name: true
+          }
+        }
+      }
+    }
+  }
+}>
+
+export type { RoomProps, RoomByIdUser }

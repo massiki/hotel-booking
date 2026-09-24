@@ -35,4 +35,9 @@ const amenitySchema = object({
     .max(100, "Nama fasilitas maksimal 100 karakter"),
 })
 
-export { contactSchema, roomSchema, amenitySchema }
+const reservasionSchema = object({
+  name: string().min(2, "Nama minimal 2 karakter").max(100, "Nama maksimal 100 karakter"),
+  phone: string().min(1, "Nomor harus diisi").max(15, "Nomor maksimal 15 angka").regex(/^08\d+$/, "Nomor telepon harus diawali 08"),
+})
+
+export { contactSchema, roomSchema, amenitySchema, reservasionSchema }

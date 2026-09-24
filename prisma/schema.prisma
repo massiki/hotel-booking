@@ -75,6 +75,8 @@ model RoomAmenities {
 
 model Reservations {
   id        String   @id @default(cuid())
+  name      String
+  phone     String
   startAt   DateTime
   endAt     DateTime
   price     Int
@@ -84,17 +86,20 @@ model Reservations {
   updatedAt DateTime @updatedAt
   rooms     Rooms    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment   Payment?
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  method    String?
-  amount    Int
-  status    String   @default("unpaid")
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  method        String?
+  amount        Int
+  status        String       @default("unpaid")
+  userId        String       @unique
+  reservationId String       @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation   Reservations @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 }
 
 model contact {

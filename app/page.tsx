@@ -15,6 +15,7 @@ import {
 } from "react-icons/md";
 import Hero from "@/components/Hero";
 import Card from "@/components/Card";
+import { getFeaturesRoomsUser } from "@/lib/data";
 
 const whyChooseUs = [
   {
@@ -54,51 +55,13 @@ const services = [
   { icon: MdCoffee, name: "Kopi & Teh" },
 ];
 
-const rooms = [
-  {
-    id: "1",
-    name: "Standard Room",
-    price: 800000,
-    adults: 2,
-  },
-  {
-    id: "2",
-    name: "Deluxe Room",
-    price: 1500000,
-    adults: 2,
-  },
-  {
-    id: "3",
-    name: "Suite Room",
-    price: 3000000,
-    adults: 4,
-  },
-  {
-    id: "4",
-    name: "Standard Room",
-    price: 800000,
-    adults: 2,
-  },
-  {
-    id: "5",
-    name: "Deluxe Room",
-    price: 1500000,
-    adults: 2,
-  },
-  {
-    id: "6",
-    name: "Suite Room",
-    price: 3000000,
-    adults: 4,
-  },
-];
-
 export const metadata: Metadata = {
   title: 'Home - HotelF',
   description: 'Experience Luxury Like Never Before Discover a world of comfort and elegance.Your perfect escape awaits with breathtaking views and unparalleled hospitality.',
 }
 
-export default function Home() {
+export default async function Home() {
+  const rooms = await getFeaturesRoomsUser()
   return (
     <>
       {/* Hero Section */}
@@ -190,7 +153,8 @@ export default function Home() {
                 id={room.id}
                 name={room.name}
                 price={room.price}
-                adults={room.adults}
+                capacity={room.capacity}
+                image={room.image}
               />
             ))}
           </div>

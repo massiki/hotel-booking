@@ -1,45 +1,11 @@
 import { Metadata } from 'next'
 import Header from '@/components/Header'
 import Card from '@/components/Card'
-
-const rooms = [
-  {
-    id: '1',
-    name: 'Standard Room',
-    price: 800000,
-    adults: 2,
-  },
-  {
-    id: '2',
-    name: 'Deluxe Room',
-    price: 1500000,
-    adults: 2,
-  },
-  {
-    id: '3',
-    name: 'Suite Room',
-    price: 3000000,
-    adults: 4,
-  },
-  {
-    id: '4',
-    name: 'Standard Room',
-    price: 800000,
-    adults: 2,
-  },
-  {
-    id: '5',
-    name: 'Deluxe Room',
-    price: 1500000,
-    adults: 2,
-  },
-  {
-    id: '6',
-    name: 'Suite Room',
-    price: 3000000,
-    adults: 4,
-  },
-]
+import SearchInput from '@/components/admin/room/SearchInput'
+import Pagination from '@/components/admin/room/Pagination'
+import CardSkeleton from '@/components/skeleton/CardSkeleton'
+import { getRoomsUser } from '@/lib/data'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: 'Kamar & Harga - HotelF',
@@ -47,7 +13,72 @@ export const metadata: Metadata = {
     'Temukan berbagai pilihan kamar kami dari Standard Room hingga Suite Room. Harga transparan dan fasilitas premium untuk pengalaman menginap terbaik.',
 }
 
-const RoomsPage = () => {
+type RoomsPageProps = {
+  searchParams: Promise<{ search?: string; page?: string }>
+}
+
+const RoomsResults = async ({ search, page }: { search: string; page: number }) => {
+  const { rooms, total, page: currentPage, totalPages } = await getRoomsUser({ search, page })
+
+  return (
+    <>
+      <p className="text-sm text-gray-500 mb-6">
+        {total} kamar ditemukan
+      </p>
+
+      {rooms.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-sm px-6 py-16 text-center">
+          <p className="text-lg font-medium text-gray-900 mb-2">
+            Tidak ada kamar ditemukan
+          </p>
+          {search && (
+            <p className="text-sm text-gray-500">
+              Coba kata kunci lain untuk pencarian &ldquo;{search}&rdquo;
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {rooms.map((room) => (
+            <Card
+              key={room.id}
+              id={room.id}
+              name={room.name}
+              price={room.price}
+              capacity={room.capacity}
+              image={room.image}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      <div className="mt-10 bg-white rounded-2xl shadow-sm">
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          search={search}
+          basePath="/rooms"
+        />
+      </div>
+    </>
+  )
+}
+
+const RoomsGridSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {Array.from({ length: 9 }).map((_, i) => (
+      <CardSkeleton key={i} />
+    ))}
+  </div>
+)
+
+const RoomsPage = async ({ searchParams }: RoomsPageProps) => {
+  const params = await searchParams
+  const search = typeof params.search === 'string' ? params.search : ''
+  const parsedPage = Number(params.page)
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1
+
   return (
     <>
       <Header
@@ -67,17 +98,21 @@ const RoomsPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {rooms.map((room) => (
-              <Card
-                key={room.id}
-                id={room.id}
-                name={room.name}
-                price={room.price}
-                adults={room.adults}
-              />
-            ))}
+          {/* Search — luar Suspense, langsung interaktif */}
+          <div className="mb-6">
+            <SearchInput
+              search={search}
+              basePath="/rooms"
+              placeholder="Cari nama kamar..."
+            />
           </div>
+
+          <Suspense
+            key={`${search}-${page}`}
+            fallback={<RoomsGridSkeleton />}
+          >
+            <RoomsResults search={search} page={page} />
+          </Suspense>
         </div>
       </section>
     </>

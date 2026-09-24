@@ -146,4 +146,60 @@ const getAmenityById = async (amenityId: string) => {
   })
 }
 
-export { getAmenities, getRooms, PAGE_SIZE, getRoomById, getContacts, getAmenitiesAdmin, getAmenityById }
+const getFeaturesRoomsUser = async () => {
+  return await prisma.rooms.findMany({
+    orderBy: {
+      price: "asc"
+    },
+    take: 6
+  })
+}
+
+const getRoomsUser = async ({ search = "", page = 1 }: { search?: string; page?: number } = {}) => {
+  const where = search
+    ? { name: { contains: search, mode: "insensitive" as const } }
+    : {}
+
+  const total = await prisma.rooms.count({ where })
+  const totalPages = Math.max(1, Math.ceil(total / 9))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+
+  const rooms = await prisma.rooms.findMany({
+    where,
+    orderBy: {
+      price: "asc"
+    },
+    skip: (safePage - 1) * 9,
+    take: 9,
+    include: {
+      roomAmenities: true
+    }
+  })
+
+  return {
+    rooms: rooms.map((room) => ({
+      ...room,
+      amenitiesCount: room.roomAmenities.length,
+    })),
+    total,
+    page: safePage,
+    totalPages,
+  }
+}
+
+const getRoomByIdUser = async (roomId: string) => {
+  return await prisma.rooms.findUnique({
+    where: { id: roomId },
+    include: {
+      roomAmenities: {
+        include: {
+          amenities: {
+            select: { name: true }
+          }
+        }
+      }
+    }
+  })
+}
+
+export { getAmenities, getRooms, PAGE_SIZE, getRoomById, getContacts, getAmenitiesAdmin, getAmenityById, getFeaturesRoomsUser, getRoomsUser, getRoomByIdUser }

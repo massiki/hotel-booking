@@ -9,7 +9,7 @@ interface CardProps {
   image?: string;
   name: string;
   price: number;
-  adults: number;
+  capacity: number;
   className?: string;
 }
 
@@ -18,7 +18,7 @@ const Card: React.FC<CardProps> = ({
   image = "/hero.jpg",
   name,
   price,
-  adults,
+  capacity,
   className,
 }) => {
   return (
@@ -46,8 +46,7 @@ const Card: React.FC<CardProps> = ({
       <div className="p-5">
         <h3 className="text-xl font-bold text-gray-900 mb-2">{name}</h3>
         <p className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-          <BsPeople size={16} className="text-primary-500" /> {adults}{" "}
-          {adults === 1 ? "Orang" : "Orang"}
+          <BsPeople size={16} className="text-primary-500" /> {capacity} Orang
         </p>
 
         <span className="block w-full py-3 bg-primary-500 text-white font-semibold rounded-lg text-center hover:bg-primary-600 transition-colors duration-200">

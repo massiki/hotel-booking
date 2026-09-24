@@ -1,10 +1,11 @@
 "use server"
-import { contactSchema, roomSchema, amenitySchema } from "@/lib/zod"
+import { contactSchema, roomSchema, amenitySchema, reservasionSchema } from "@/lib/zod"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { del } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
+import { differenceInCalendarDays } from "date-fns"
 
 const requireAdmin = async () => {
   const session = await auth()
@@ -409,6 +410,62 @@ const deleteAmenityAction = async (amenityId: string) => {
   return { success: "Fasilitas berhasil dihapus" }
 }
 
+const createReservationAction = async (roomId: string, price: number, startAt: Date, endAt: Date, prevState: unknown, formData: FormData) => {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) return { error: "Silahkan Login terlebih dahulu" }
+
+  const values = {
+    name: String(formData.get('name') ?? ''),
+    phone: String(formData.get('phone') ?? ''),
+  }
+
+  const data = {
+    name: formData.get('name'),
+    phone: formData.get('phone'),
+  }
+
+  const validated = reservasionSchema.safeParse(data)
+  if (!validated.success) {
+    return { error: validated.error.flatten().fieldErrors as Record<string, string[]>, values }
+  }
+
+  const night = differenceInCalendarDays(endAt, startAt)
+  if (night <= 0) return { error: "Lama duration minimal 1 malam", values }
+
+  let reservationId
+  try {
+    await prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservations.create({
+        data: {
+          userId,
+          name: validated.data.name,
+          phone: validated.data.phone,
+          price,
+          roomId,
+          startAt,
+          endAt,
+        },
+      })
+
+      reservationId = reservation.id
+
+      await tx.payment.create({
+        data: {
+          userId,
+          reservationId: reservation.id,
+          amount: price * night,
+        },
+      })
+    })
+  } catch (error) {
+    console.error(error)
+    return { error: "Gagal membuat reservation. Coba lagi.", values }
+  }
+
+  redirect(`/checkout/${reservationId}`)
+}
+
 export {
   contactAction,
   createRoomAction,
@@ -418,4 +475,5 @@ export {
   createAmenityAction,
   updateAmenityAction,
   deleteAmenityAction,
+  createReservationAction,
 }
