@@ -258,4 +258,21 @@ const deleteRoomAction = async (roomId: string) => {
   return { success: "Kamar berhasil dihapus" }
 }
 
-export { contactAction, createRoomAction, updateRoomAction, deleteRoomAction }
+const deleteContactAction = async (contactId: string) => {
+  const isAdmin = await requireAdmin()
+  if (!isAdmin) {
+    return { error: "Tidak diizinkan" }
+  }
+
+  try {
+    await prisma.contact.delete({ where: { id: contactId } })
+  } catch (error) {
+    console.error(error)
+    return { error: "Gagal menghapus pesan. Coba lagi." }
+  }
+
+  revalidatePath('/admin/manage-contact')
+  return { success: "Pesan berhasil dihapus" }
+}
+
+export { contactAction, createRoomAction, updateRoomAction, deleteRoomAction, deleteContactAction }

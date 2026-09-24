@@ -5,19 +5,20 @@ type PaginationProps = {
   page: number
   totalPages: number
   search: string
+  basePath?: string
 }
 
-const buildHref = (targetPage: number, search: string) => {
+const buildHref = (targetPage: number, search: string, basePath: string) => {
   const params = new URLSearchParams()
   const trimmed = search.trim()
   if (trimmed) params.set('search', trimmed)
   if (targetPage > 1) params.set('page', String(targetPage))
 
   const query = params.toString()
-  return query ? `/admin/manage-room?${query}` : '/admin/manage-room'
+  return query ? `${basePath}?${query}` : basePath
 }
 
-const Pagination = ({ page, totalPages, search }: PaginationProps) => {
+const Pagination = ({ page, totalPages, search, basePath = '/admin/manage-room' }: PaginationProps) => {
   const isFirst = page <= 1
   const isLast = page >= totalPages
 
@@ -31,7 +32,7 @@ const Pagination = ({ page, totalPages, search }: PaginationProps) => {
           Sebelumnya
         </span>
       ) : (
-        <Link href={buildHref(page - 1, search)} className={buttonClass}>
+        <Link href={buildHref(page - 1, search, basePath)} className={buttonClass}>
           <MdChevronLeft className="text-lg" />
           Sebelumnya
         </Link>
@@ -47,7 +48,7 @@ const Pagination = ({ page, totalPages, search }: PaginationProps) => {
           <MdChevronRight className="text-lg" />
         </span>
       ) : (
-        <Link href={buildHref(page + 1, search)} className={buttonClass}>
+        <Link href={buildHref(page + 1, search, basePath)} className={buttonClass}>
           Berikutnya
           <MdChevronRight className="text-lg" />
         </Link>

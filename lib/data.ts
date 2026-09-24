@@ -60,4 +60,41 @@ const getRoomById = async (roomId: string) => {
   })
 }
 
-export { getAmenities, getRooms, PAGE_SIZE, getRoomById }
+const getContacts = async ({ search = "", page = 1 }: { search?: string; page?: number } = {}) => {
+  const session = await auth()
+  if (!session || !session.user || session.user.role !== 'admin') {
+    throw new Error("Unauthorized Access")
+  }
+
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { email: { contains: search, mode: "insensitive" as const } },
+          { subject: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
+    : {}
+
+  const total = await prisma.contact.count({ where })
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+
+  const contacts = await prisma.contact.findMany({
+    where,
+    orderBy: {
+      createdAt: "desc"
+    },
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  })
+
+  return {
+    contacts,
+    total,
+    page: safePage,
+    totalPages,
+  }
+}
+
+export { getAmenities, getRooms, PAGE_SIZE, getRoomById, getContacts }

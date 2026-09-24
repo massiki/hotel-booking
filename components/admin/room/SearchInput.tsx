@@ -3,7 +3,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { MdSearch } from 'react-icons/md'
 
-const SearchInput = ({ search }: { search: string }) => {
+type SearchInputProps = {
+  search: string
+  basePath?: string
+  placeholder?: string
+}
+
+const SearchInput = ({ search, basePath = '/admin/manage-room', placeholder = 'Cari nama kamar...' }: SearchInputProps) => {
   const router = useRouter()
   const [value, setValue] = useState(search)
 
@@ -16,11 +22,11 @@ const SearchInput = ({ search }: { search: string }) => {
       if (trimmed) params.set('search', trimmed)
 
       const query = params.toString()
-      router.replace(query ? `/admin/manage-room?${query}` : '/admin/manage-room', { scroll: false })
+      router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false })
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [value, search, router])
+  }, [value, search, router, basePath])
 
   return (
     <div className="relative w-full sm:w-72">
@@ -29,7 +35,7 @@ const SearchInput = ({ search }: { search: string }) => {
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Cari nama kamar..."
+        placeholder={placeholder}
         className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
       />
     </div>
