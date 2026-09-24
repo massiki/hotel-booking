@@ -25,9 +25,7 @@ export const authConfig = {
 
       const isUserRoute = pathname.startsWith("/reservation")
 
-      const isAdminRoute =
-        pathname.startsWith("/admin/dashboard") ||
-        pathname.startsWith("/admin/manage-room")
+      const isAdminRoute = pathname.startsWith("/admin")
 
       if (pathname === '/login' && isLoggedIn) {
         return Response.redirect(new URL('/', request.nextUrl))

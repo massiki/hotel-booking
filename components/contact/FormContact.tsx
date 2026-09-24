@@ -7,7 +7,7 @@ import {
   MdSend,
 } from 'react-icons/md'
 import { contactAction } from '@/lib/action'
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 import clsx from 'clsx'
 
 const contactInfo = [
@@ -34,7 +34,7 @@ const contactInfo = [
 ]
 
 const FormContact = () => {
-  const [state, formAction, isPanding] = useActionState(contactAction, null)
+  const [state, formAction, isPending] = useActionState(contactAction, null)
 
   return (
     <section className="py-20 bg-gray-50">
@@ -49,6 +49,11 @@ const FormContact = () => {
               <p className="text-gray-500 text-sm mb-8">
                 Isi form di bawah ini dan kami akan membalas sesegera mungkin.
               </p>
+              {state?.error?.form && (
+                <p className="p-5 mb-4 bg-red-50 rounded text-sm text-red-600">
+                  {state.error.form[0]}
+                </p>
+              )}
               {state?.success && (
                 <p className="p-5 mb-4 bg-green-100 rounded text-sm text-green-700">
                   {state?.success}
@@ -67,6 +72,7 @@ const FormContact = () => {
                       type="text"
                       id="name"
                       name="name"
+                      defaultValue={state?.values?.name}
                       placeholder="Masukkan nama Anda"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                     />
@@ -87,6 +93,7 @@ const FormContact = () => {
                       type="email"
                       id="email"
                       name="email"
+                      defaultValue={state?.values?.email}
                       placeholder="Masukkan email Anda"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                     />
@@ -109,6 +116,7 @@ const FormContact = () => {
                     type="text"
                     id="subject"
                     name="subject"
+                    defaultValue={state?.values?.subject}
                     placeholder="Perihal pesan Anda"
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm"
                   />
@@ -130,6 +138,7 @@ const FormContact = () => {
                     id="message"
                     name="message"
                     rows={5}
+                    defaultValue={state?.values?.message}
                     placeholder="Tuliskan pesan Anda di sini..."
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm resize-none"
                   />
@@ -142,11 +151,11 @@ const FormContact = () => {
 
                 <button
                   type="submit"
-                  className={clsx("inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer", { "cursor-progress opacity-50": isPanding })}
-                  disabled={isPanding}
+                  className={clsx("inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer", { "cursor-progress opacity-50": isPending })}
+                  disabled={isPending}
                 >
                   <MdSend className="text-lg" />
-                  {isPanding ? "Mengirim..." : "Kirim Pesan"}
+                  {isPending ? "Mengirim..." : "Kirim Pesan"}
                 </button>
               </form>
             </div>
