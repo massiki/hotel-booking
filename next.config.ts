@@ -2,9 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  images: {
+    dangerouslyAllowLocalIP: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+      },
+    ]
+  }
 };
 
-// module.exports = {
-//   allowedDevOrigins: ['172.18.224.1'],
-// }
 export default nextConfig;

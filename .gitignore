@@ -44,3 +44,8 @@ dist/
 .env
 
 /app/generated/prisma
+
+# ai agent skills (local only)
+/.claude
+/.windsurf
+/.agents

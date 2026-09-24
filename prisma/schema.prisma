@@ -69,6 +69,8 @@ model RoomAmenities {
   updatedAt DateTime  @updatedAt
   amenities Amenities @relation(fields: [amenityId], references: [id], onDelete: Cascade)
   room      Rooms     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, amenityId])
 }
 
 model Reservations {
