@@ -410,7 +410,7 @@ const deleteAmenityAction = async (amenityId: string) => {
   return { success: "Fasilitas berhasil dihapus" }
 }
 
-const createReservationAction = async (roomId: string, price: number, startAt: Date, endAt: Date, prevState: unknown, formData: FormData) => {
+const createReservationAction = async (roomId: string, startAt: Date | null, endAt: Date | null, prevState: unknown, formData: FormData) => {
   const session = await auth()
   const userId = session?.user?.id
   if (!userId) return { error: "Silahkan Login terlebih dahulu" }
@@ -430,40 +430,101 @@ const createReservationAction = async (roomId: string, price: number, startAt: D
     return { error: validated.error.flatten().fieldErrors as Record<string, string[]>, values }
   }
 
+  if (!startAt || !endAt || isNaN(startAt.getTime()) || isNaN(endAt.getTime())) {
+    return { error: "Pilih rentang tanggal check-in dan check-out", values }
+  }
+
+  const earliest = new Date()
+  earliest.setUTCHours(0, 0, 0, 0)
+  earliest.setUTCDate(earliest.getUTCDate() - 1)
+  if (startAt < earliest) {
+    return { error: "Tanggal check-in tidak boleh di masa lalu", values }
+  }
+
   const night = differenceInCalendarDays(endAt, startAt)
   if (night <= 0) return { error: "Lama duration minimal 1 malam", values }
+
+  const room = await prisma.rooms.findUnique({ where: { id: roomId } })
+  if (!room) return { error: "Kamar tidak ditemukan", values }
 
   let reservationId
   try {
     await prisma.$transaction(async (tx) => {
+      const overlap = await tx.reservations.findFirst({
+        where: {
+          roomId,
+          startAt: { lt: endAt },
+          endAt: { gt: startAt },
+          payment: { status: { not: "failure" } },
+        },
+        select: { id: true },
+      })
+      if (overlap) throw new Error("OVERLAP")
+
       const reservation = await tx.reservations.create({
         data: {
           userId,
           name: validated.data.name,
           phone: validated.data.phone,
-          price,
+          price: room.price,
           roomId,
           startAt,
           endAt,
         },
       })
 
-      reservationId = reservation.id
-
       await tx.payment.create({
         data: {
-          userId,
           reservationId: reservation.id,
-          amount: price * night,
+          amount: room.price * night,
         },
       })
+
+      reservationId = reservation.id
     })
   } catch (error) {
+    if (error instanceof Error && error.message === "OVERLAP") {
+      return { error: "Tanggal sudah dipesan pengguna lain", values }
+    }
     console.error(error)
     return { error: "Gagal membuat reservation. Coba lagi.", values }
   }
 
   redirect(`/checkout/${reservationId}`)
+}
+
+const payReservationAction = async (reservationId: string, _prevState: unknown, _formData: FormData) => {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) return { error: "Silahkan login terlebih dahulu" }
+
+  try {
+    const reservation = await prisma.reservations.findUnique({
+      where: { id: reservationId },
+      include: { payment: true },
+    })
+
+    if (!reservation || reservation.userId !== userId || !reservation.payment) {
+      return { error: "Reservasi tidak ditemukan" }
+    }
+
+    if (reservation.payment.status === "paid") {
+      return { error: "Pembayaran sudah dilakukan sebelumnya" }
+    }
+
+    await prisma.payment.update({
+      where: { id: reservation.payment.id },
+      data: {
+        status: "paid",
+        method: "mock",
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    return { error: "Gagal memproses pembayaran. Coba lagi." }
+  }
+
+  return { success: "Pembayaran berhasil. Reservasi Anda lunas." }
 }
 
 export {
@@ -476,4 +537,5 @@ export {
   updateAmenityAction,
   deleteAmenityAction,
   createReservationAction,
+  payReservationAction,
 }

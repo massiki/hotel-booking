@@ -1,11 +1,12 @@
 'use client'
 import { Rooms } from '@/app/generated/prisma/client'
-import { addDays } from 'date-fns'
+import { addDays, startOfDay } from 'date-fns'
 import { useState } from 'react'
 import DatePicker from 'react-datepicker'
 import { useActionState } from 'react'
 import "react-datepicker/dist/react-datepicker.css"
 import { createReservationAction } from '@/lib/action'
+import { DisableDateProps } from '@/types/room'
 
 type FieldErrors = Record<string, string[]>
 
@@ -15,15 +16,35 @@ type ReservationState = {
   success?: string
 } | null
 
-const CardReservation = ({ room }: { room: Rooms }) => {
+const CardReservation = ({ room, disableDate }: { room: Rooms, disableDate: DisableDateProps }) => {
   const StartDate = new Date()
   const EndDate = addDays(StartDate, 1)
 
-  const [starDate, setStarDate] = useState(StartDate)
-  const [endDate, setEndDate] = useState(EndDate)
+  const [starDate, setStarDate] = useState<Date | null>(StartDate)
+  const [endDate, setEndDate] = useState<Date | null>(EndDate)
+  const [dateError, setDateError] = useState<string | null>(null)
+
+  const excludeDate = disableDate.map((item) => {
+    return {
+      start: item.startAt,
+      end: item.endAt
+    }
+  })
+
+  const isRangeFree = (start: Date, end: Date) => {
+    const last = startOfDay(end)
+    for (let day = startOfDay(start); day <= last; day = addDays(day, 1)) {
+      for (const interval of excludeDate) {
+        const intervalStart = startOfDay(interval.start)
+        const intervalEnd = startOfDay(interval.end)
+        if (day >= intervalStart && day <= intervalEnd) return false
+      }
+    }
+    return true
+  }
 
   const [state, formAction, isPending] = useActionState<ReservationState, FormData>(
-    createReservationAction.bind(null, room.id, room.price, starDate, endDate),
+    createReservationAction.bind(null, room.id, starDate, endDate),
     null,
   )
 
@@ -38,8 +59,25 @@ const CardReservation = ({ room }: { room: Rooms }) => {
 
   const handleDateChange = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates
-    if (start) setStarDate(start)
-    if (end) setEndDate(end)
+    if (!start) {
+      setStarDate(null)
+      setEndDate(null)
+      setDateError(null)
+      return
+    }
+    if (!end) {
+      setStarDate(start)
+      setEndDate(null)
+      setDateError(null)
+      return
+    }
+    if (!isRangeFree(start, end)) {
+      setDateError("Rentang tanggal sudah dipesan pengguna lain")
+      return
+    }
+    setDateError(null)
+    setStarDate(start)
+    setEndDate(end)
   }
 
   return (
@@ -74,11 +112,17 @@ const CardReservation = ({ room }: { room: Rooms }) => {
                 endDate={endDate}
                 minDate={new Date()}
                 selectsRange={true}
+                excludeDateIntervals={excludeDate}
                 dateFormat={"dd-MM-YYYY"}
                 wrapperClassName='w-full'
                 onChange={handleDateChange}
                 className='w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors duration-200 text-sm'
               />
+              {dateError && (
+                <span className="mt-1 block text-sm text-red-500">
+                  {dateError}
+                </span>
+              )}
             </div>
             <div className="py-3 m-0 border-b border-gray-100">
               <label
@@ -125,7 +169,7 @@ const CardReservation = ({ room }: { room: Rooms }) => {
           </div>
 
           <button
-            disabled={isPending}
+            disabled={isPending || !endDate}
             className="w-full py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {isPending ? 'Memproses...' : 'Book Sekarang'}

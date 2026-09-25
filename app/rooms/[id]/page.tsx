@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import { MdArrowBack, MdOutlineDoneOutline } from 'react-icons/md'
-import { getRoomByIdUser } from '@/lib/data'
+import { getDisableDateRoomByid, getRoomByIdUser } from '@/lib/data'
 import CardReservation from '@/components/reservation/CardReservation'
 
 export async function generateMetadata({ params, }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params, }: { params: Promise<{ id: stri
 
 export default async function RoomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const room = await getRoomByIdUser(id)
+  const [room, disabledDate] = await Promise.all([getRoomByIdUser(id), getDisableDateRoomByid(id)])
   if (!room) notFound()
 
   return (
@@ -97,7 +97,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             {/* Sidebar — 1/3 */}
-            <CardReservation room={room} />
+            <CardReservation room={room} disableDate={disabledDate} />
           </div>
         </div>
       </section>
