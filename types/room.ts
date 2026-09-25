@@ -28,4 +28,11 @@ type RoomByIdUser = Prisma.RoomsGetPayload<{
   }
 }>
 
-export type { RoomProps, RoomByIdUser }
+type DisableDateProps = Prisma.ReservationsGetPayload<{
+  select: {
+    startAt: true,
+    endAt: true
+  },
+}>[]
+
+export type { RoomProps, RoomByIdUser, DisableDateProps }

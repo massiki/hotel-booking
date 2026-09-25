@@ -202,4 +202,52 @@ const getRoomByIdUser = async (roomId: string) => {
   })
 }
 
-export { getAmenities, getRooms, PAGE_SIZE, getRoomById, getContacts, getAmenitiesAdmin, getAmenityById, getFeaturesRoomsUser, getRoomsUser, getRoomByIdUser }
+const getDisableDateRoomByid = async (roomId: string) => {
+  return await prisma.reservations.findMany({
+    select: {
+      startAt: true,
+      endAt: true
+    },
+    where: {
+      roomId,
+      payment: {
+        status: {
+          not: "failure"
+        }
+      }
+    }
+  })
+}
+
+const getReservationCheckout = async (reservationId: string) => {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  const reservation = await prisma.reservations.findUnique({
+    where: { id: reservationId },
+    include: {
+      rooms: true,
+      payment: true,
+    },
+  })
+
+  if (!reservation || !reservation.payment) return null
+  if (reservation.userId !== session.user.id) return null
+
+  return { ...reservation, payment: reservation.payment }
+}
+
+export {
+  getAmenities,
+  getRooms,
+  PAGE_SIZE,
+  getRoomById,
+  getContacts,
+  getAmenitiesAdmin,
+  getAmenityById,
+  getFeaturesRoomsUser,
+  getRoomsUser,
+  getRoomByIdUser,
+  getDisableDateRoomByid,
+  getReservationCheckout
+}

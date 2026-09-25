@@ -23,7 +23,7 @@ export const authConfig = {
       const role = auth?.user.role
       const pathname = request.nextUrl.pathname
 
-      const isUserRoute = pathname.startsWith("/reservation")
+      const isUserRoute = pathname.startsWith("/reservation") || pathname.startsWith("/checkout")
 
       const isAdminRoute = pathname.startsWith("/admin")
 
