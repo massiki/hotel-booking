@@ -237,6 +237,42 @@ const getReservationCheckout = async (reservationId: string) => {
   return { ...reservation, payment: reservation.payment }
 }
 
+const getReservationUser = async ({ userId, page = 1 }: { userId: string, page?: number }) => {
+  const session = await auth()
+  if (!session?.user?.id || session.user.id !== userId) return null
+
+  const total = await prisma.reservations.count({
+    where: {
+      userId
+    }
+  })
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const safePage = Math.min(Math.max(1, page || 1), totalPages)
+
+  const reservations = await prisma.reservations.findMany({
+    where: {
+      userId
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    include: {
+      rooms: true,
+      payment: true,
+    },
+  })
+
+  return {
+    reservations,
+    total,
+    page: safePage,
+    totalPages,
+  }
+}
+
 export {
   getAmenities,
   getRooms,
@@ -249,5 +285,6 @@ export {
   getRoomsUser,
   getRoomByIdUser,
   getDisableDateRoomByid,
-  getReservationCheckout
+  getReservationCheckout,
+  getReservationUser,
 }
