@@ -273,6 +273,26 @@ const getReservationUser = async ({ userId, page = 1 }: { userId: string, page?:
   }
 }
 
+const getReservationDetail = async (reservationId: string) => {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  const reservation = await prisma.reservations.findUnique({
+    where: { id: reservationId },
+    include: {
+      rooms: true,
+      payment: true,
+      user: {
+        select: { email: true },
+      },
+    },
+  })
+
+  if (!reservation || reservation.userId !== session.user.id) return null
+
+  return reservation
+}
+
 const getDashboardData = async ({ search = "", page = 1 }: { search?: string; page?: number } = {}) => {
   const session = await auth()
   if (!session || !session.user || session.user.role !== 'admin') {
@@ -349,5 +369,6 @@ export {
   getDisableDateRoomByid,
   getReservationCheckout,
   getReservationUser,
+  getReservationDetail,
   getDashboardData,
 }
