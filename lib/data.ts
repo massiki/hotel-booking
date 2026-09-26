@@ -273,6 +273,68 @@ const getReservationUser = async ({ userId, page = 1 }: { userId: string, page?:
   }
 }
 
+const getDashboardData = async ({ search = "", page = 1 }: { search?: string; page?: number } = {}) => {
+  const session = await auth()
+  if (!session || !session.user || session.user.role !== 'admin') {
+    throw new Error("Unauthorized Access")
+  }
+
+  const where = search
+    ? {
+      OR: [
+        { name: { contains: search, mode: "insensitive" as const } },
+        { rooms: { name: { contains: search, mode: "insensitive" as const } } },
+      ],
+    }
+    : {}
+
+  const totalReservations = await prisma.reservations.count()
+  const [totalRooms, totalUsers, totalRevenue, total] = await Promise.all([
+    prisma.rooms.count(),
+    prisma.user.count({
+      where: {
+        role: 'user'
+      }
+    }),
+    prisma.payment.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        status: "paid",
+      },
+    }),
+    prisma.reservations.count({ where }),
+  ])
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+
+  const reservations = await prisma.reservations.findMany({
+    where,
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    include: {
+      rooms: true,
+      payment: true,
+    },
+  })
+
+  return {
+    totalReservations,
+    totalRooms,
+    totalUsers,
+    totalRevenue: totalRevenue._sum.amount ?? 0,
+    reservations,
+    total,
+    page: safePage,
+    totalPages,
+  }
+}
+
 export {
   getAmenities,
   getRooms,
@@ -287,4 +349,5 @@ export {
   getDisableDateRoomByid,
   getReservationCheckout,
   getReservationUser,
+  getDashboardData,
 }
