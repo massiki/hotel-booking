@@ -6,6 +6,7 @@ import { del } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/auth"
 import { differenceInCalendarDays } from "date-fns"
+import { createSnapToken } from "@/lib/midtrans"
 
 const requireAdmin = async () => {
   const session = await auth()
@@ -455,7 +456,7 @@ const createReservationAction = async (roomId: string, startAt: Date | null, end
           roomId,
           startAt: { lt: endAt },
           endAt: { gt: startAt },
-          payment: { status: { not: "failure" } },
+          payment: { status: { notIn: ["failure", "cancelled"] } },
         },
         select: { id: true },
       })
@@ -490,10 +491,33 @@ const createReservationAction = async (roomId: string, startAt: Date | null, end
     return { error: "Gagal membuat reservation. Coba lagi.", values }
   }
 
+  try {
+    const { token, expiresAt } = await createSnapToken({
+      reservationId: reservationId!,
+      roomId,
+      roomName: room.name,
+      startAt,
+      endAt,
+      amount: room.price * night,
+      customer: {
+        name: validated.data.name,
+        phone: validated.data.phone,
+        email: session.user.email ?? undefined,
+      },
+    })
+
+    await prisma.reservations.update({
+      where: { id: reservationId! },
+      data: { token, tokenExpiresAt: expiresAt },
+    })
+  } catch (error) {
+    console.error("Gagal generate token Snap:", error)
+  }
+
   redirect(`/checkout/${reservationId}`)
 }
 
-const payReservationAction = async (reservationId: string, _prevState: unknown, _formData: FormData) => {
+const cancelReservationAction = async (reservationId: string) => {
   const session = await auth()
   const userId = session?.user?.id
   if (!userId) return { error: "Silahkan login terlebih dahulu" }
@@ -509,22 +533,23 @@ const payReservationAction = async (reservationId: string, _prevState: unknown, 
     }
 
     if (reservation.payment.status === "paid") {
-      return { error: "Pembayaran sudah dilakukan sebelumnya" }
+      return { error: "Reservasi sudah lunas dan tidak bisa dibatalkan" }
+    }
+
+    if (reservation.payment.status === "cancelled") {
+      return { error: "Reservasi sudah dibatalkan" }
     }
 
     await prisma.payment.update({
       where: { id: reservation.payment.id },
-      data: {
-        status: "paid",
-        method: "mock",
-      },
+      data: { status: "cancelled" },
     })
   } catch (error) {
     console.error(error)
-    return { error: "Gagal memproses pembayaran. Coba lagi." }
+    return { error: "Gagal membatalkan reservasi. Coba lagi." }
   }
 
-  return { success: "Pembayaran berhasil. Reservasi Anda lunas." }
+  redirect("/reservation")
 }
 
 export {
@@ -537,5 +562,5 @@ export {
   updateAmenityAction,
   deleteAmenityAction,
   createReservationAction,
-  payReservationAction,
+  cancelReservationAction,
 }

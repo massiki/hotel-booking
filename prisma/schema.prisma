@@ -73,19 +73,21 @@ model RoomAmenities {
 }
 
 model Reservations {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String
-  startAt   DateTime
-  endAt     DateTime
-  price     Int
-  userId    String
-  roomId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  rooms     Rooms    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payment   Payment?
+  id             String    @id @default(cuid())
+  name           String
+  phone          String
+  startAt        DateTime
+  endAt          DateTime
+  price          Int
+  userId         String
+  roomId         String
+  token          String?
+  tokenExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  rooms          Rooms     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment        Payment?
 }
 
 model Payment {

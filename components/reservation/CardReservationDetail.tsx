@@ -23,6 +23,13 @@ const statusBadge = (status: string | null) => {
       className: 'bg-green-50 text-green-700 border border-green-200',
     }
   }
+  if (status === 'cancelled') {
+    return {
+      label: 'Dibatalkan',
+      icon: <MdClose className="text-sm" />,
+      className: 'bg-gray-100 text-gray-600 border border-gray-200',
+    }
+  }
   if (status === 'failure') {
     return {
       label: 'Pembayaran Gagal',
@@ -44,6 +51,13 @@ const statusBadge = (status: string | null) => {
   }
 }
 
+const humanizeMethod = (method: string | null): string => {
+  if (!method) return '—'
+  if (method === 'mock') return 'Mock Gateway'
+  if (method.toLowerCase() === 'qris') return 'QRIS'
+  return method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 const Field = ({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) => (
   <div>
     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
@@ -63,16 +77,13 @@ const Field = ({ label, value, mono = false }: { label: string; value: string; m
 const CardReservationDetail = ({ reservation }: CardReservationDetailProps) => {
   const { rooms, payment, user } = reservation
   const isPaid = payment?.status === 'paid'
-  const isSettleable = !isPaid
+  const isCancelled = payment?.status === 'cancelled'
+  const isFailure = payment?.status === 'failure'
   const nights = differenceInCalendarDays(reservation.endAt, reservation.startAt)
   const subtotal = payment?.amount ?? reservation.price * Math.max(1, nights)
   const badge = statusBadge(payment?.status ?? null)
 
-  const methodLabel = payment
-    ? payment.method === 'mock'
-      ? 'Mock Gateway'
-      : (payment.method ?? '—')
-    : '—'
+  const methodLabel = humanizeMethod(payment?.method ?? null)
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -163,18 +174,28 @@ const CardReservationDetail = ({ reservation }: CardReservationDetailProps) => {
 
         {/* Action */}
         <div className="mt-7">
-          {isSettleable ? (
+          {isCancelled ? (
+            <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-600 font-semibold rounded-lg border border-gray-200 text-sm">
+              <MdClose className="text-lg" />
+              Reservasi Dibatalkan
+            </div>
+          ) : isPaid ? (
+            <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-50 text-green-700 font-semibold rounded-lg border border-green-200 text-sm">
+              <MdCheckCircleOutline className="text-lg" />
+              Pembayaran Berhasil
+            </div>
+          ) : isFailure ? (
+            <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-600 font-semibold rounded-lg border border-gray-200 text-sm">
+              <MdClose className="text-lg" />
+              Reservasi Gagal
+            </div>
+          ) : (
             <Link
               href={`/checkout/${reservation.id}`}
               className="block w-full py-3.5 bg-primary-500 text-white text-center font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5"
             >
               Bayar Sekarang
             </Link>
-          ) : (
-            <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-50 text-green-700 font-semibold rounded-lg border border-green-200 text-sm">
-              <MdCheckCircleOutline className="text-lg" />
-              Pembayaran Berhasil
-            </div>
           )}
         </div>
       </div>

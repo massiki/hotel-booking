@@ -1,10 +1,10 @@
 'use client'
-import { useActionState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { MdArrowBack, MdCheckCircleOutline, MdOutlinePayments } from 'react-icons/md'
-import { payReservationAction } from '@/lib/action'
+import { MdArrowBack, MdCheckCircleOutline, MdClose, MdOutlinePayments } from 'react-icons/md'
 import { formatDate } from '@/lib/utils'
+import PaymentButton from '../PaymentButton'
+import CancelButton from './CancelButton'
 
 type CheckoutReservation = {
   id: string
@@ -27,11 +27,6 @@ type CheckoutReservation = {
   }
 }
 
-type PayState = {
-  error?: string
-  success?: string
-} | null
-
 const nightsBetween = (startAt: Date | string, endAt: Date | string) => {
   const start = new Date(startAt)
   const end = new Date(endAt)
@@ -40,17 +35,11 @@ const nightsBetween = (startAt: Date | string, endAt: Date | string) => {
 }
 
 const CardCheckout = ({ reservation }: { reservation: CheckoutReservation }) => {
-  const [state, formAction, isPending] = useActionState<PayState, FormData>(
-    payReservationAction.bind(null, reservation.id),
-    null,
-  )
-
-  const isPaid = reservation.payment.status === 'paid'
-  const paidViaAction = !!state?.success
-  const showPaid = isPaid || paidViaAction
   const nights = nightsBetween(reservation.startAt, reservation.endAt)
   const checkIn = formatDate(reservation.startAt)
   const checkOut = formatDate(reservation.endAt)
+  const isPaid = reservation.payment.status === 'paid'
+  const isCancelled = reservation.payment.status === 'cancelled'
 
   return (
     <section className="py-12 md:py-16 bg-gray-50">
@@ -99,17 +88,21 @@ const CardCheckout = ({ reservation }: { reservation: CheckoutReservation }) => 
                   </div>
                   <span
                     className={
-                      showPaid
+                      isPaid
                         ? 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200'
-                        : 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200'
+                        : isCancelled
+                          ? 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200'
+                          : 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200'
                     }
                   >
-                    {showPaid ? (
+                    {isPaid ? (
                       <MdCheckCircleOutline className="text-base" />
+                    ) : isCancelled ? (
+                      <MdClose className="text-base" />
                     ) : (
                       <MdOutlinePayments className="text-base" />
                     )}
-                    {showPaid ? 'Lunas' : 'Menunggu Pembayaran'}
+                    {isPaid ? 'Lunas' : isCancelled ? 'Dibatalkan' : 'Menunggu Pembayaran'}
                   </span>
                 </div>
 
@@ -166,17 +159,6 @@ const CardCheckout = ({ reservation }: { reservation: CheckoutReservation }) => 
                 Ringkasan Pembayaran
               </h3>
 
-              {state?.error && (
-                <p className="p-4 mb-4 bg-red-50 rounded-lg text-sm text-red-600">
-                  {state.error}
-                </p>
-              )}
-              {state?.success && (
-                <p className="p-4 mb-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                  {state.success}
-                </p>
-              )}
-
               <div className="space-y-3 mb-6 text-sm">
                 <div className="flex justify-between gap-4">
                   <span className="text-gray-500">Harga per malam</span>
@@ -205,25 +187,25 @@ const CardCheckout = ({ reservation }: { reservation: CheckoutReservation }) => 
                 </span>
               </div>
 
-              {showPaid ? (
+              {isPaid ? (
                 <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-50 text-green-700 font-semibold rounded-lg border border-green-200 text-sm">
                   <MdCheckCircleOutline className="text-lg" />
                   Pembayaran Berhasil
                 </div>
+              ) : isCancelled ? (
+                <div className="w-full flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-600 font-semibold rounded-lg border border-gray-200 text-sm">
+                  <MdClose className="text-lg" />
+                  Reservasi Dibatalkan
+                </div>
               ) : (
-                <form action={formAction}>
-                  <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full py-3.5 bg-primary-500 text-white font-semibold rounded-lg shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-primary-500/35 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  >
-                    {isPending ? 'Memproses...' : 'Bayar Sekarang'}
-                  </button>
-                </form>
+                <>
+                  <PaymentButton reservationId={reservation.id} />
+                  <CancelButton reservationId={reservation.id} />
+                </>
               )}
 
               <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
-                Pembayaran mock — status langsung lunas setelah dikonfirmasi
+                Pembayaran diproses melalui Midtrans — status diperbarui otomatis setelah dikonfirmasi.
               </p>
             </div>
           </div>

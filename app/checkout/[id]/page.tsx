@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getReservationCheckout } from '@/lib/data'
 import CardCheckout from '@/components/checkout/CardCheckout'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Checkout - HotelF',
@@ -14,5 +15,14 @@ export default async function CheckoutPage({ params }: { params: Promise<{ id: s
 
   if (!reservation) notFound()
 
-  return <CardCheckout reservation={reservation} />
+  return (
+    <>
+      <CardCheckout reservation={reservation} />
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+      />
+    </>
+  )
 }
