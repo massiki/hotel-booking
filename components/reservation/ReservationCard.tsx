@@ -20,6 +20,7 @@ type ReservationCardProps = {
 const ReservationCard = ({ reservation }: ReservationCardProps) => {
   const { rooms, payment } = reservation
   const isPaid = payment?.status === 'paid'
+  const isCancelled = payment?.status === 'cancelled'
   const isFailure = payment?.status === 'failure'
   const nights = differenceInCalendarDays(reservation.endAt, reservation.startAt)
 
@@ -29,17 +30,23 @@ const ReservationCard = ({ reservation }: ReservationCardProps) => {
       icon: <MdCheckCircleOutline className="text-base" />,
       className: 'bg-green-50 text-green-700 border border-green-200',
     }
-    : isFailure
+    : isCancelled
       ? {
-        label: 'Pembayaran Gagal',
+        label: 'Dibatalkan',
         icon: <MdClose className="text-base" />,
-        className: 'bg-red-50 text-red-600 border border-red-200',
+        className: 'bg-gray-100 text-gray-600 border border-gray-200',
       }
-      : {
-        label: 'Menunggu Pembayaran',
-        icon: <MdOutlinePayments className="text-base" />,
-        className: 'bg-amber-50 text-amber-700 border border-amber-200',
-      }
+      : isFailure
+        ? {
+          label: 'Pembayaran Gagal',
+          icon: <MdClose className="text-base" />,
+          className: 'bg-red-50 text-red-600 border border-red-200',
+        }
+        : {
+          label: 'Menunggu Pembayaran',
+          icon: <MdOutlinePayments className="text-base" />,
+          className: 'bg-amber-50 text-amber-700 border border-amber-200',
+        }
 
   return (
     <article className="bg-white rounded-2xl shadow-sm p-5 md:p-6 flex flex-col md:flex-row gap-5">
@@ -116,7 +123,7 @@ const ReservationCard = ({ reservation }: ReservationCardProps) => {
             </p>
           </div>
 
-          {isPaid ? (
+          {isPaid || isCancelled || isFailure ? (
             <Link
               href={`/reservation/${reservation.id}`}
               className="inline-flex items-center justify-center px-5 py-2.5 border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:border-primary-500 hover:text-primary-500 transition-colors duration-200"

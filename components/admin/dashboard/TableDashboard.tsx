@@ -18,12 +18,14 @@ const statusStyles: Record<string, string> = {
   paid: 'bg-green-100 text-green-700',
   unpaid: 'bg-yellow-100 text-yellow-700',
   failure: 'bg-red-100 text-red-700',
+  cancelled: 'bg-gray-100 text-gray-600',
 }
 
 const statusLabels: Record<string, string> = {
   paid: 'Lunas',
   unpaid: 'Menunggu',
   failure: 'Gagal',
+  cancelled: 'Dibatalkan',
 }
 
 const TableDashboard = ({ reservations, total, page, totalPages, search }: TableDashboardProps) => {

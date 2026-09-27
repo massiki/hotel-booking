@@ -98,7 +98,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 text-center">
           <p className="text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Hotel. All rights reserved.
+            &copy; {new Date().getFullYear()} HotelF. Created by Fikri Amrullah.
           </p>
         </div>
       </div>

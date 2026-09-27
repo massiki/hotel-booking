@@ -212,7 +212,7 @@ const getDisableDateRoomByid = async (roomId: string) => {
       roomId,
       payment: {
         status: {
-          not: "failure"
+          notIn: ["failure", "cancelled"]
         }
       }
     }
