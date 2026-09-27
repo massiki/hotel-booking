@@ -10,49 +10,56 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Project overview
 
-Hotel booking site (Indonesian locale). Has Google OAuth login, PostgreSQL database via Prisma, role-based access (user/admin), and several stub routes.
+Hotel booking site (Indonesian locale): public room browsing, Google OAuth login, role-based access (user/admin), reservation flow with Midtrans Snap payment, admin CRUD for rooms/amenities/contacts. No test suite, no CI.
 
 ## Stack
 
-- **Next.js 16.3.5** / React 19.2.8 — App Router (`app/` directory, no `src/`)
-- **Tailwind CSS v4** via `@tailwindcss/postcss` — no `tailwind.config.*` file; custom theme defined with `@theme` in `app/globals.css`
-- **TypeScript** (strict) with path alias `@/*` → project root
-- **NextAuth v5 beta** (`next-auth@5.0.0-beta.32`) with Google provider, JWT strategy, Prisma adapter
-- **Prisma 7.10.0** with PostgreSQL via Neon (`@prisma/adapter-pg` driver adapter)
-- **react-icons** (md, hi, bs, fc families), **clsx** for class composition
+- **Next.js 16.3.5** / React 19.2.8 — App Router (`app/` at repo root, no `src/`)
+- **Tailwind CSS v4** via `@tailwindcss/postcss` — no `tailwind.config.*`; `@theme` block in `app/globals.css` (orange `--color-primary-*` palette)
+- **TypeScript** strict, `@/*` → repo root; ESM (`"type": "module"`)
+- **NextAuth v5 beta** (Google, JWT strategy, Prisma adapter) — split across `auth.ts`, `auth.config.ts`, `proxy.ts`
+- **Prisma 7** + PostgreSQL via `@prisma/adapter-pg`; config in `prisma7.config.ts` (loads dotenv, reads `POSTGRES_URL`)
+- **Midtrans Snap** (sandbox) for payment, **Vercel Blob** for images, **zod** for form validation
+- react-icons, clsx, date-fns, react-datepicker, react-spinners
 
 ## Commands
 
 ```bash
-npm run dev          # dev server on localhost:3000
-npm run build        # production build
-npm run lint         # eslint (flat config, next/core-web-vitals + typescript)
+npm run dev             # localhost:3000
+npm run build           # next build
+npm run lint            # eslint flat config (ignores .next, app/generated)
+npx tsc --noEmit        # typecheck — no npm script
+npx prisma generate     # after editing prisma/schema.prisma
+npx prisma migrate dev  # migrations (reads POSTGRES_URL from .env)
 ```
 
-No test suite. No typecheck script — run `npx tsc --noEmit` if needed.
+No tests — verify changes with `npm run lint` and `npx tsc --noEmit`. `npm install` runs `prisma skills sync` (see `skills-lock.json`).
 
 ## Structure
 
-- `app/` — routes: `/`, `/about`, `/rooms` (stub), `/contact` (stub), `/login`, `/admin/dashboard` (stub), `/admin/manage-room` (stub)
-- `app/api/[...nextauth]/route.ts` — NextAuth API handler
-- `app/generated/prisma/` — generated Prisma client (**gitignored**, do not edit)
-- `components/` — shared UI (Navbar, Footer, Hero, Card, Header, etc.)
-- `lib/prisma.ts` — singleton PrismaClient with PrismaPg adapter
-- `app/globals.css` — Tailwind directives + custom theme (orange primary palette)
+- `app/` — routes: `/`, `/about`, `/rooms` + `/rooms/[id]`, `/contact`, `/login`, `/reservation` + `/reservation/[id]`, `/checkout/[id]`, `/admin/{dashboard,manage-room,manage-amenities,manage-contact}` (room/amenity CRUD adds `create` and `[id]/edit` subroutes)
+- `app/api/` — `[...nextauth]`, `upload` (Vercel Blob, admin-only), `payment` (issues Snap token), `payment/notification` (Midtrans webhook, SHA-512 signature check)
+- `lib/action.ts` — all server actions (`"use server"`, named exports at bottom of file); each admin action calls its local `requireAdmin()`
+- `lib/data.ts` — data fetchers; admin-only ones throw `Error("Unauthorized Access")`
+- `lib/midtrans.ts`, `lib/zod.ts` — Snap token creation (sandbox), zod schemas
+- `app/generated/prisma/` — generated client (**gitignored**, never edit); import as `@/app/generated/prisma/client`
+- `types/` — shared types + ambient globals (`authjs.d.ts` adds `role` to session/JWT, `midtrans.d.ts` declares `window.snap`)
 
 ## Gotchas
 
-- **Auth middleware lives in `proxy.ts`**, not `middleware.ts`. It exports `NextAuth(authConfig).auth` and a `config` with route matchers. Route protection logic is in `auth.config.ts` callbacks.
-- **Prisma client is generated to `app/generated/prisma/`** (gitignored). After schema changes run `npx prisma generate`. The import path is `@/app/generated/prisma/client`.
-- **No `tailwind.config.*`** — this is Tailwind v4. Theme customization uses `@theme` blocks in `app/globals.css`, not a config file.
-- **ESM project** (`"type": "module"` in package.json).
-- **`.env` required**: `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `POSTGRES_URL`, `DATABASE_URL`. All gitignored.
-- **Login layout** (`app/login/layout.tsx`) overrides root layout — no Navbar/Footer on login page.
+- **Middleware is `proxy.ts`**, not `middleware.ts` (Next 16 renamed the convention; `middleware.ts` is deprecated). It exports `NextAuth(authConfig).auth` + `config.matcher`. Actual route rules live in the `authorized` callback in `auth.config.ts`: `/reservation*` and `/checkout*` require login, `/admin*` requires `role === "admin"`, logged-in users are bounced off `/login`.
+- **Env vars** (all gitignored): `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `POSTGRES_URL`, `MIDTRANS_SERVER_KEY`, `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`, `BLOB_READ_WRITE_TOKEN`. Code reads `POSTGRES_URL` — there is **no** `DATABASE_URL`.
+- **After schema changes** run `npx prisma generate` before typecheck/build.
+- **`searchParams`/`params` are Promises** — pages `await searchParams` (Next 15+ async request APIs).
+- **Admin mutations redirect with `?success=created|updated|...`** — list pages decode it into a banner via a local `successMessages` map.
+- **Payment flow**: `createReservationAction` stores an unpaid `Payment` + Snap token on the reservation → `/checkout/[id]` loads sandbox `snap.js` via `next/script` → `PaymentButton` POSTs `/api/payment` for a fresh token → `window.snap.pay(...)` → webhook `/api/payment/notification` flips status to `paid`.
+- **Login layout** (`app/login/layout.tsx`) replaces root layout — no Navbar/Footer there.
+- The `<!-- BEGIN:nextjs-agent-rules -->` block above is auto-recreated by `next dev`; commit it with your changes rather than deleting it.
 
 ## Conventions
 
-- Components are default-exported, one per file, PascalCase filenames (exceptions: `ButtonLogin.tsx` and `NavbarLink.tsx` use named exports)
-- Use `@/` import alias for cross-directory imports
-- Content is in Indonesian (Bahasa Indonesia)
-- `'use client'` directive where needed (Navbar, Footer, login page)
-- No CSS modules — pure Tailwind utility classes
+- Components: default export, one per file, PascalCase filename. Named-export exceptions: `ButtonLogin.tsx` (`ButtonLoginGoogle`), `NavbarLink.tsx` (`NavbarLinkMobile`/`NavbarLinkDesktop`)
+- `'use client'` only where interactivity requires it (Navbar, Footer, login page, forms, admin tables/search inputs) — page components stay server components
+- Forms use `useActionState` bound to server actions; validation via zod schemas from `lib/zod.ts`
+- UI copy is Bahasa Indonesia
+- No CSS modules — Tailwind utility classes only
